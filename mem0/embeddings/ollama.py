@@ -1,33 +1,20 @@
-from typing import Optional
-
-from mem0.configs.embeddings.base import BaseEmbedderConfig
+import ollama
 from mem0.embeddings.base import EmbeddingBase
-
-try:
-    from ollama import Client
-except ImportError:
-    raise ImportError("Ollama requires extra dependencies. Install with `pip install ollama`") from None
 
 
 class OllamaEmbedding(EmbeddingBase):
-    def __init__(self, config: Optional[BaseEmbedderConfig] = None):
-        super().__init__(config)
-    
-        if not self.config.model:
-            self.config.model="nomic-embed-text"
-        if not self.config.embedding_dims:
-            self.config.embedding_dims=512
-            
-        self.client = Client(host=self.config.base_url)
+    def __init__(self, model="nomic-embed-text"):
+        self.model = model
         self._ensure_model_exists()
+        self.dims = 512
 
     def _ensure_model_exists(self):
         """
         Ensure the specified model exists locally. If not, pull it from Ollama.
         """
-        local_models = self.client.list()["models"]
-        if not any(model.get("name") == self.config.model for model in local_models):
-            self.client.pull(self.config.model)
+        model_list = [m["name"] for m in ollama.list()["models"]]
+        if not any(m.startswith(self.model) for m in model_list):
+            ollama.pull(self.model)
 
     def embed(self, text):
         """
@@ -39,5 +26,5 @@ class OllamaEmbedding(EmbeddingBase):
         Returns:
             list: The embedding vector.
         """
-        response = self.client.embeddings(model=self.config.model, prompt=text)
+        response = ollama.embeddings(model=self.model, prompt=text)
         return response["embedding"]
