@@ -1,5 +1,6 @@
 import importlib
 
+from mem0.configs.embeddings.base import BaseEmbedderConfig
 from mem0.configs.llms.base import BaseLlmConfig
 
 
@@ -38,11 +39,12 @@ class EmbedderFactory:
     }
 
     @classmethod
-    def create(cls, provider_name):
+    def create(cls, provider_name, config):
         class_type = cls.provider_to_class.get(provider_name)
         if class_type:
-            embedder_instance = load_class(class_type)()
-            return embedder_instance
+            embedder_instance = load_class(class_type)
+            base_config = BaseEmbedderConfig(**config)
+            return embedder_instance(base_config)
         else:
             raise ValueError(f"Unsupported Embedder provider: {provider_name}")
         
