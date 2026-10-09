@@ -7,6 +7,7 @@ from mem0.configs.rerankers.huggingface import HuggingFaceRerankerConfig
 from mem0.configs.rerankers.sentence_transformer import (
     SentenceTransformerRerankerConfig,
 )
+from mem0.configs.rerankers.typesafe import TypeSafeRerankerConfig
 from mem0.configs.rerankers.zero_entropy import ZeroEntropyRerankerConfig
 from mem0.reranker.huggingface_reranker import HuggingFaceReranker
 from mem0.reranker.sentence_transformer_reranker import SentenceTransformerReranker
@@ -35,6 +36,19 @@ class TestZeroEntropyFallbackNoMutation:
         fake_client.models.rerank.side_effect = RuntimeError("API error")
 
         reranker = module.ZeroEntropyReranker(ZeroEntropyRerankerConfig(api_key="test-key"))
+        documents = _docs(3)
+        result = reranker.rerank("query", documents)
+
+        assert all("rerank_score" not in doc for doc in documents)
+        assert all(doc["rerank_score"] == 0.0 for doc in result)
+
+
+class TestTypeSafeFallbackNoMutation:
+    def test_fallback_does_not_mutate_original_documents(self, mock_typesafe):
+        module, fake_client = mock_typesafe
+        fake_client.system_one.side_effect = RuntimeError("API error")
+
+        reranker = module.TypeSafeReranker(TypeSafeRerankerConfig(api_key="test-key"))
         documents = _docs(3)
         result = reranker.rerank("query", documents)
 

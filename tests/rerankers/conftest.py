@@ -41,3 +41,20 @@ def mock_zero_entropy(monkeypatch):
     monkeypatch.setattr(zero_entropy_reranker, "ZeroEntropy", fake_module.ZeroEntropy, raising=False)
     monkeypatch.setattr(zero_entropy_reranker, "ZERO_ENTROPY_AVAILABLE", True, raising=False)
     return zero_entropy_reranker, fake_client
+
+
+@pytest.fixture
+def mock_typesafe(monkeypatch):
+    """Provide a fake ``typesafe_sdk`` module so TypeSafeReranker imports/constructs."""
+    fake_module = ModuleType("typesafe_sdk")
+    fake_client = MagicMock()
+    fake_module.TypeSafeClient = MagicMock(return_value=fake_client)
+    fake_module.Noul = MagicMock(side_effect=lambda **kwargs: kwargs)
+    monkeypatch.setitem(sys.modules, "typesafe_sdk", fake_module)
+
+    import mem0.reranker.typesafe_reranker as typesafe_reranker
+
+    monkeypatch.setattr(typesafe_reranker, "TypeSafeClient", fake_module.TypeSafeClient, raising=False)
+    monkeypatch.setattr(typesafe_reranker, "Noul", fake_module.Noul, raising=False)
+    monkeypatch.setattr(typesafe_reranker, "TYPESAFE_AVAILABLE", True, raising=False)
+    return typesafe_reranker, fake_client

@@ -1,0 +1,114 @@
+---
+title: TypeSafe
+description: "Rerank Mem0 search results with relevance probabilities from TypeSafe's Jev decision model."
+---
+
+[TypeSafe](https://typesafe.ai) serves Jev, a decision model that answers typed questions about an input instead of generating text. The TypeSafe reranker asks Jev whether each retrieved memory is relevant to the query and uses the returned probability as `rerank_score`.
+
+## How it works
+
+- The query is sent as the request state, and each memory becomes one yes/no relevance question.
+- Up to `batch_size` memories are scored in a single request.
+- `rerank_score` is the probability, from 0 to 1, that the memory is relevant, so a fixed threshold means the same thing across queries.
+
+## Installation
+
+```bash
+pip install typesafe-sdk
+```
+
+## Configuration
+
+```python Python
+from mem0 import Memory
+
+config = {
+    "vector_store": {
+        "provider": "chroma",
+        "config": {
+            "collection_name": "my_memories",
+            "path": "./chroma_db"
+        }
+    },
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "model": "gpt-5-mini"
+        }
+    },
+    "reranker": {
+        "provider": "typesafe",
+        "config": {
+            "model": "jev-latest",
+            "api_key": "your-typesafe-api-key",  # or set TYPESAFE_API_KEY
+            "top_k": 5
+        }
+    }
+}
+
+memory = Memory.from_config(config)
+```
+
+## Environment Variables
+
+```bash
+export TYPESAFE_API_KEY="your-api-key"
+export TYPESAFE_BASE_URL="https://api.typesafe.ai"  # optional
+```
+
+## Usage Example
+
+```python Python
+import os
+from mem0 import Memory
+
+os.environ["TYPESAFE_API_KEY"] = "your-api-key"
+
+config = {
+    "vector_store": {"provider": "chroma"},
+    "llm": {"provider": "openai", "config": {"model": "gpt-5-mini"}},
+    "reranker": {"provider": "typesafe", "config": {"top_k": 5}}
+}
+
+memory = Memory.from_config(config)
+
+messages = [
+    {"role": "user", "content": "I love Italian pasta, especially carbonara"},
+    {"role": "user", "content": "Japanese sushi is also amazing"},
+    {"role": "user", "content": "I enjoy cooking Mediterranean dishes"}
+]
+
+memory.add(messages, user_id="alice")
+
+results = memory.search(
+    "What Italian food does the user like?",
+    filters={"user_id": "alice"},
+    rerank=True,
+)
+
+for result in results["results"]:
+    print(f"Memory: {result['memory']}")
+    print(f"Rerank Score: {result['rerank_score']:.3f}")
+```
+
+## Configuration Parameters
+
+| Parameter | Description | Type | Default |
+|-----------|-------------|------|---------|
+| `model` | TypeSafe model to use | `str` | `"jev-latest"` |
+| `api_key` | TypeSafe API key | `str` | `None` (reads `TYPESAFE_API_KEY`) |
+| `base_url` | API root | `str` | `None` (reads `TYPESAFE_BASE_URL`, then `https://api.typesafe.ai`) |
+| `top_k` | Maximum documents to return after reranking | `int` | `None` |
+| `batch_size` | Maximum memories scored in one request | `int` | `100` |
+| `max_memory_chars` | Memories longer than this are truncated before scoring | `int` | `2000` |
+| `timeout` | Timeout in seconds for each request | `float` | `None` (SDK default) |
+
+## Best Practices
+
+1. **Pin the model**: `jev-latest` moves when TypeSafe ships a release. Pin a specific version when you need scores to stay comparable over time.
+2. **Keep memories short**: Lower `max_memory_chars` or `batch_size` if a request is rejected for exceeding the token limit.
+3. **Failures fall back**: If a request fails, results keep their original order with a `rerank_score` of `0.0`, and a warning is logged.
+
+<Note>
+The TypeSafe reranker is available in the Python SDK only.
+</Note>

@@ -67,6 +67,17 @@ All rerankers share these common configuration parameters:
 | `llm.config`   | LLM configuration object    | `dict` | Required |
 | `top_n`        | Number of results to return | `int`  | `None`   |
 
+### TypeSafe
+
+| Parameter          | Description                                       | Type    | Default        |
+| ------------------ | ------------------------------------------------- | ------- | -------------- |
+| `model`            | TypeSafe model to use                             | `str`   | `"jev-latest"` |
+| `api_key`          | TypeSafe API key                                  | `str`   | `None`         |
+| `base_url`         | API root                                          | `str`   | `None`         |
+| `batch_size`       | Maximum memories scored in one request            | `int`   | `100`          |
+| `max_memory_chars` | Memories longer than this are truncated           | `int`   | `2000`         |
+| `timeout`          | Timeout in seconds for each request               | `float` | `None`         |
+
 ## Environment Variables
 
 You can set API keys using environment variables:
@@ -76,6 +87,7 @@ You can set API keys using environment variables:
 - `HUGGINGFACE_API_KEY` - HuggingFace API token
 - `OPENAI_API_KEY` - OpenAI API key (for LLM-based reranker)
 - `ANTHROPIC_API_KEY` - Anthropic API key (for LLM-based reranker)
+- `TYPESAFE_API_KEY` - TypeSafe API key
 
 ## Basic Configuration Example
 

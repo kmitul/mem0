@@ -275,7 +275,8 @@
                               "components/rerankers/models/sentence-transformer",
                               "components/rerankers/models/huggingface",
                               "components/rerankers/models/llm-reranker",
-                              "components/rerankers/models/zero-entropy"
+                              "components/rerankers/models/zero-entropy",
+                              "components/rerankers/models/typesafe"
                             ]
                           }
                         ]
